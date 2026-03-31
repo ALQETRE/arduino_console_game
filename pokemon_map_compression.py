@@ -1,33 +1,34 @@
 from pyperclip import copy
 
-map1 = ["wwwww",
-        "w   w",
-        "w   w",
-        "wwwww",
+map1 = ["wwwwww",
+        "w    w",
+        "w    w",
+        "wwwwww",
         ]
 
-def compress(map, name):
-    map1 = ".".join(map)
-    chars = "".join(set(map1))
-    ids = "0123456789abcdefghijklmnopqrstuv"
+def compress(map, name, indent=""):
+    chars = ""
+    for line in map:
+        chars = "".join(set(chars+line))
+    string_output = f"{indent}uint64_t {name}TileMap[{len(map)}] = " + "{"
+    for line in map:
+        output = 0
+        i = 0
+        for char in line:
+            output += chars.index(char) * (16 ** i)
+            i+=1
 
-    output = ""
-    for char in map1:
-        output += ids[chars.index(char)]
-
-    output = output[::-1]
-    output = int(output, len(chars))
-    output = output.to_bytes((output.bit_length() + 7) // 8, "big")
-
-    string_output = f"byte {name}TileMap[] = " + "{"
-    for byte in output:
-        string_output += hex(byte)
+        string_output += hex(output)
         string_output += ", "
-    string_output = string_output[:-2] + "}"
 
-    string_output += f'\nstring {name}TileSet = "{chars}"'
+    string_output = string_output[:-2] + "};"
+    string_output += f'\n{indent}string {name}TileSet = "{chars}";'
+    string_output += f'\n{indent}int {name}XSize = {len(map[0])};'
+    string_output += f'\n{indent}int {name}YSize = {len(map)};'
+    string_output += f'\n{indent}String {name}[{len(map)}];'
+    string_output += f'\n{indent}decompress({name}TileMap, {name}TileSet, {name}XSize, {name}YSize, {name});'
 
     copy(string_output)
     return string_output
 
-print(compress(map1, "map1"))
+print(compress(map1, "map1", "  "))
