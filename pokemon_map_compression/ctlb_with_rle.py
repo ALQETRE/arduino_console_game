@@ -14,15 +14,56 @@ with open("pokemon_map_compression/maps.json", mode="r") as fd:
 
 def compress(map, name, indent=""):
     pre_comp_size = len(map) * len(map[0]) * 8
+
     map = ".".join(map)+","
+
     chars = "".join(set(map))
-    char_size = len(chars).bit_length() # 32 - __builtin_clz(x);
+    char_size = (len(chars)+1).bit_length() # 32 - __builtin_clz(x);
+
+    prev_char = map[0]
+    map_separated = []
+    part = ""
+    for char in map:
+        if len(part) >= 15:
+            prev_char = char
+            map_separated.append(part)
+            part = char
+        elif char == prev_char:
+            part += char
+        else:
+            prev_char = char
+            map_separated.append(part)
+            part = char
+    map_separated.append(part)
+
+    for i in range(len(map_separated)):
+        part = map_separated[i]
+        if len(part)*char_size < 4 + (char_size*2):
+            continue
+
+        map_separated[i] = f"?{format(len(part), 'x')}{part[0]}"
+
+    map = "".join(map_separated)
+
+    if "?" in map:
+        chars += "?"
+
+    char_size = (len(chars)).bit_length()
 
     total = 0
+    next_is_num = False
     for char in map:
-        idx = chars.index(char)
-        total *= 2**char_size
-        total += idx
+        if not next_is_num:
+            idx = chars.index(char)
+            total *= 2**char_size
+            total += idx
+        else:
+            total *= 16
+            total += int(char, 16)
+        next_is_num = char == "?"
+        
+    # print(format(total, "b"))
+
     size = (total.bit_length()+7)//8
     output = total.to_bytes(size, "little")
 
