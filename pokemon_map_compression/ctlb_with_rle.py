@@ -62,6 +62,7 @@ def compress(map, name, indent=""):
             total += int(char, 16)
         next_is_num = char == "?"
         
+    print(map)
     # print(format(total, "b"))
 
     size = (total.bit_length()+7)//8
@@ -79,6 +80,7 @@ def compress(map, name, indent=""):
     return ((len(output) + len(chars)) * 8) / (pre_comp_size)
 
 # print(compress(map1, "map1", "  "))
+# print(compress(maps["levelData14"], "map1", "  "))
 
 total = 0
 max_val = 0
