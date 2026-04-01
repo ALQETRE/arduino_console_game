@@ -2,9 +2,9 @@ from pyperclip import copy
 import math
 from json import load
 
-map1 = ["wwwwww",
-        "w    w",
-        "w    w",
+map1 = ["wawwww",
+        "wabcdw",
+        "wefghw",
         "wwwwww",
         ]
 
@@ -50,45 +50,48 @@ def compress(map, name, indent=""):
 
     char_size = (len(chars)).bit_length()
 
-    total = 0
+    total = 1
     next_is_num = False
     for char in map:
         if not next_is_num:
             idx = chars.index(char)
-            total *= 2**char_size
+            total = total << char_size
             total += idx
         else:
             total *= 16
             total += int(char, 16)
         next_is_num = char == "?"
-        
-    print(map)
-    # print(format(total, "b"))
+    
+    size = (total.bit_length()+6)//8
+    total = total << ((size*8) - total.bit_length()+1)
+    total -= 2**(total.bit_length()-1)
+    output = total.to_bytes(size, "big")
 
-    size = (total.bit_length()+7)//8
-    output = total.to_bytes(size, "little")
+    # print(map)
+    # print(format(total, "b"))
+    # print()
 
     string_output = f"{indent}byte {name}TileMap[{size}] = " + "{"
     for byte in output:
         string_output += hex(byte)
         string_output += ", "
     string_output = string_output[:-2] + "};"
-    string_output += f'\n{indent}string {name}TileSet = "{chars}";'
+    string_output += f'\n{indent}String {name}TileSet = "{chars}";'
 
     copy(string_output)
-    # print(string_output)
+    print(string_output)
     return ((len(output) + len(chars)) * 8) / (pre_comp_size)
 
 # print(compress(map1, "map1", "  "))
-# print(compress(maps["levelData14"], "map1", "  "))
+print(compress(maps["levelData5"], "map2", "  "))
 
-total = 0
-max_val = 0
-for name, map in maps.items():
-    corr = compress(map, name, "  ")
-    total += corr
-    if max_val < corr:
-        max_val = corr
+# total = 0
+# max_val = 0
+# for name, map in maps.items():
+#     corr = compress(map, name, "  ")
+#     total += corr
+#     if max_val < corr:
+#         max_val = corr
 
-print(f"Max: {max_val}")
-print(f"Avg: {total/len(maps)}")
+# print(f"Max: {max_val}")
+# print(f"Avg: {total/len(maps)}")
