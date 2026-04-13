@@ -151,8 +151,7 @@ struct DinoGame {
 };
 
 
-struct SnakeGame
-{
+struct SnakeGame {
   int snake[20*4][2], snakeLen, head, snakeX, snakeY, dirX, dirY, appleX, appleY;
 
   bool run, gameOver, gameWon;
@@ -223,50 +222,6 @@ struct SnakeGame
     0b01110,
   };
 
-  byte snakeTop [8] = {
-    0b01110,
-    0b01110,
-    0b01110,
-    0b01110,
-    0b01110,
-    0b01110,
-    0b00000,
-    0b00000,
-  };
-
-  byte snakeBottom [8] = {
-    0b00000,
-    0b00000,
-    0b00000,
-    0b01110,
-    0b01110,
-    0b01110,
-    0b01110,
-    0b01110,
-  };
-
-  byte snakeLeft[8] = {
-    0b00000,
-    0b00000,
-    0b00000,
-    0b11110,
-    0b11110,
-    0b11110,
-    0b00000,
-    0b00000,
-  };
-
-  byte snakeRight[8] = {
-    0b00000,
-    0b00000,
-    0b00000,
-    0b01111,
-    0b01111,
-    0b01111,
-    0b00000,
-    0b00000,
-  };
-
   byte snakeDot[8] = {
     0b00000,
     0b00000,
@@ -294,11 +249,11 @@ struct SnakeGame
     appleY = random(0, 4);
 
     lcd.setCursor(appleX, appleY);
-    lcd.write(11);
+    lcd.write(7);
   }
 
   void incHead(int &head) {
-    head = ((head+1) % 80) + 80;
+    head = (head+1) % 80;
   }
 
   void drawSnake() {
@@ -307,10 +262,10 @@ struct SnakeGame
 
     int prevX = 0;
     int prevY = 0;
-    for (int idx = head; idx >= head-snakeLen+1; idx--) {
-      int i = idx%80;
+    for (int offset = 0; offset < snakeLen; offset++) {
+      int i = (head - offset + 80) % 80;
 
-      if (idx != head) {
+      if (offset != 0) {
         if (currentX == snakeX && currentY == snakeY) {
           run = false;
           delay(1000);
@@ -345,17 +300,11 @@ struct SnakeGame
       else if (diffX == 1 && diffY == 1) {
         snakeChar = 5;
       }
-      else if (diffX == 0 && diffY == -1) {
-        snakeChar = 6;
+      else if (diffX == 0 && abs(diffY) == 1) {
+        snakeChar = 0;
       }
-      else if (diffX == 0 && diffY == 1) {
-        snakeChar = 7;
-      }
-      else if (diffX == -1 && diffY == 0) {
-        snakeChar = 8;
-      }
-      else if (diffX == 1 && diffY == 0) {
-        snakeChar = 9;
+      else if (abs(diffX) == 1 && diffY == 0) {
+        snakeChar = 1;
       }
 
       lcd.setCursor(currentX, currentY);
@@ -364,21 +313,15 @@ struct SnakeGame
       currentY += currentMove[1];
     }
 
-    int diffX = snake[head-snakeLen+1][0];
-    int diffY = snake[head-snakeLen+1][1];
+    int diffX = snake[(head-snakeLen+81)%80][0];
+    int diffY = snake[(head-snakeLen+81)%80][1];
     int snakeChar;
 
-    if (diffY == -1) {
-      snakeChar = 6;
+    if (abs(diffY) == 1) {
+      snakeChar = 0;
     }
-    else if (diffY == 1) {
-      snakeChar = 7;
-    }
-    else if (diffX == -1) {
-      snakeChar = 8;
-    }
-    else if (diffX == 1) {
-      snakeChar = 9;
+    else if (abs(diffX) == 1) {
+      snakeChar = 1;
     }
     lcd.setCursor(currentX, currentY);
     lcd.write(snakeChar);
@@ -391,12 +334,8 @@ struct SnakeGame
     lcd.createChar(3, snakeTopRight);
     lcd.createChar(4, snakeBottomLeft);
     lcd.createChar(5, snakeBottomRight);
-    lcd.createChar(6, snakeTop);
-    lcd.createChar(7, snakeBottom);
-    lcd.createChar(8, snakeLeft);
-    lcd.createChar(9, snakeRight);
-    lcd.createChar(10, snakeDot);
-    lcd.createChar(11, apple);
+    lcd.createChar(6, snakeDot);
+    lcd.createChar(7, apple);
     
     randomSeed(analogRead(0));
 
@@ -405,7 +344,7 @@ struct SnakeGame
     dirX = 0;
     dirY = 0;
 
-    snakeLen = 3;
+    snakeLen = 1;
     head = 0;
 
     appleX = 0;
@@ -419,7 +358,7 @@ struct SnakeGame
     lcd.clear();
 
     lcd.setCursor(snakeX, snakeY);
-    lcd.write(10);
+    lcd.write(6);
 
     joyX = 0;
     joyY = 0;
@@ -428,6 +367,8 @@ struct SnakeGame
     }
     snake[head][0] = -joyX;
     snake[head][1] = -joyY;
+    snakeX -= joyX;
+    snakeY -= joyY;
     run = true;
   }
 
@@ -475,12 +416,16 @@ struct SnakeGame
       return;
     }
 
+    snakeX -= joyX;
+    snakeY -= joyY;
+    
     incHead(head);
-    snake[head%80][0] = -joyX;
-    snake[head%80][1] = -joyY;
+    snake[head][0] = -joyX;
+    snake[head][1] = -joyY;
 
     if (snakeX == appleX && snakeY == appleY) {
       snakeLen += 1;
+      setApple(appleX, appleY);
     }
 
     drawSnake();
